@@ -1,0 +1,16 @@
+<map>
+    <entry>
+        <long>1000</long>
+        <tdd.solid.module.order.domain.Order>
+            <orderId>1000</orderId>
+            <state>NOT_PROCESSED</state>
+        </tdd.solid.module.order.domain.Order>
+    </entry>
+    <entry>
+        <long>1001</long>
+        <tdd.solid.module.order.domain.Order>
+            <orderId>1001</orderId>
+            <state>NOT_PROCESSED</state>
+        </tdd.solid.module.order.domain.Order>
+    </entry>
+</map>
