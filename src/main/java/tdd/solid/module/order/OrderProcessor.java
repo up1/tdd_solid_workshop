@@ -20,7 +20,7 @@ public class OrderProcessor {
 
     private static final String ORDER_FILE_NAME = "data/orders.xml";
     private static final String INVENTORY_FILE_NAME = "data/inventory.xml";
-    
+
     private Map<Long, Order> orders;
     private Map<String, InventoryItem> inventory;
     private long lastOrderId = 0;
@@ -28,11 +28,7 @@ public class OrderProcessor {
     public OrderProcessor() {
         readInventoryFromFile();
         readOrderFromFile();
-        lastOrderId = orders.values()
-                .stream()
-                .mapToLong(Order::getOrderId)
-                .max()
-                .orElse(0);
+        lastOrderId = orders.values().stream().mapToLong(Order::getOrderId).max().orElse(0);
     }
 
     public ResponseMessage processMessage(RequestMessage requestMessage) {
@@ -72,27 +68,25 @@ public class OrderProcessor {
         newOrder.getOrderItems().addAll(requestMessage.getOrderItems());
 
         newOrder.getOrderItems().forEach(currentItem -> {
-            
-            //Check quantity from inventory
-            InventoryItem inventoryItem = inventory.get(currentItem.getItemCode());
-            if(inventoryItem.getQuantity() >= currentItem.getQuantity()) {
-                inventoryItem.setQuantity(inventoryItem.getQuantity() - currentItem.getQuantity());
-                
-                //Calculate price
-                calculatePrice(currentItem, inventoryItem);
-                
-                currentItem.setState(OrderItemState.FILLED);
-            } else {
-                currentItem.setState(OrderItemState.NOT_ENOUGH_QUANTITY);
-            }
-        });
 
-        newOrder.setState(newOrder.getOrderItems().stream().allMatch(o -> o.getState() == OrderItemState.FILLED) 
-                ? OrderState.FILLED
-                : OrderState.PROCESSING);
-        
+            // Check quantity from inventory
+                InventoryItem inventoryItem = inventory.get(currentItem.getItemCode());
+                if (inventoryItem.getQuantity() >= currentItem.getQuantity()) {
+                    inventoryItem.setQuantity(inventoryItem.getQuantity() - currentItem.getQuantity());
+
+                    // Calculate price
+                    calculatePrice(currentItem, inventoryItem);
+
+                    currentItem.setState(OrderItemState.FILLED);
+                } else {
+                    currentItem.setState(OrderItemState.NOT_ENOUGH_QUANTITY);
+                }
+            });
+
+        newOrder.setState(newOrder.getOrderItems().stream().allMatch(o -> o.getState() == OrderItemState.FILLED) ? OrderState.FILLED : OrderState.PROCESSING);
+
         orders.put(newOrder.getOrderId(), newOrder);
-        
+
         // Save inventory to file
         writeInventoryToFile();
 
@@ -103,7 +97,23 @@ public class OrderProcessor {
     }
 
     private void calculatePrice(OrderItem currentItem, InventoryItem inventoryItem) {
-        
+        if ("FULLQUANTITY".equals(inventoryItem.getPricingCalculation())) {
+            currentItem.setPricePerUnit(inventoryItem.getPricePerUnit());
+            currentItem.setDiscount(currentItem.getQuantity() * inventoryItem.getDiscount());
+            currentItem.setPrice(currentItem.getPricePerUnit() * currentItem.getQuantity() - currentItem.getDiscount());
+
+        } else if ("BUY2GET1FREE".equals(inventoryItem.getPricingCalculation())) {
+            currentItem.setPricePerUnit(inventoryItem.getPricePerUnit());
+            currentItem.setDiscount(0);
+
+            int multiplesOfThree = (int) currentItem.getQuantity() / 3;
+            double quantityToCharge = currentItem.getQuantity() - multiplesOfThree;
+
+            currentItem.setPrice(currentItem.getPricePerUnit() * quantityToCharge);
+
+        } else {
+            throw new RuntimeException("Invalid type of pricing for calculation : " + inventoryItem.getPricingCalculation());
+        }
     }
 
     private ResponseMessage createOrderResponseMessage(RequestMessage requestMessage, Order newOrder) {
@@ -114,7 +124,7 @@ public class OrderProcessor {
     private void readInventoryFromFile() {
         inventory = (Map<String, InventoryItem>) new XStream().fromXML(new File(INVENTORY_FILE_NAME));
     }
-    
+
     private void writeInventoryToFile() {
         try (OutputStream stream = new FileOutputStream(INVENTORY_FILE_NAME)) {
             new XStream().toXML(inventory, stream);

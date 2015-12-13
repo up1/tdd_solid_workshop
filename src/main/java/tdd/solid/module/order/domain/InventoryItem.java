@@ -5,6 +5,7 @@ public class InventoryItem {
     private String pricingCalculation;
     private double pricePerUnit;
     private double quantity;
+    private double discount;
 
     public String getItemCode() {
         return itemCode;
@@ -36,6 +37,14 @@ public class InventoryItem {
 
     public void setQuantity(double quantity) {
         this.quantity = quantity;
+    }
+
+    public double getDiscount() {
+        return discount;
+    }
+
+    public void setDiscount(double discount) {
+        this.discount = discount;
     }
 
 }
