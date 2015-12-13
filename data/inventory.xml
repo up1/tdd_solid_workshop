@@ -8,4 +8,13 @@
       <quantity>10</quantity>
     </tdd.solid.module.order.domain.InventoryItem>
   </entry>
+  <entry>
+    <string>I0002</string>
+    <tdd.solid.module.order.domain.InventoryItem>
+      <itemCode>I0002</itemCode>
+      <pricingCalculation>BUY2GET1FREE</pricingCalculation>
+      <pricePerUnit>10</pricePerUnit>
+      <quantity>10</quantity>
+    </tdd.solid.module.order.domain.InventoryItem>
+  </entry>
 </map>
