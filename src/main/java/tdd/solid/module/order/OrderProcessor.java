@@ -62,6 +62,7 @@ public class OrderProcessor {
     private ResponseMessage createOrder(RequestMessage requestMessage) {
         Order newOrder = new Order();
         newOrder.setOrderId(++lastOrderId);
+        newOrder.getOrderItems().addAll(requestMessage.getOrderItems());
         newOrder.setState(OrderState.PROCESSING);
         
         orders.put(newOrder.getOrderId(), newOrder);
