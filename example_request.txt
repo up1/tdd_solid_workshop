@@ -1,0 +1,25 @@
+#GET ORDER DETAIL
+
+POST http://localhost:12345/
+{
+"orderId": 1011,
+"operation": "GET_ORDER_DETAIL"
+}
+
+
+#SUBMIT or CREATE new ORDER
+POST http://localhost:12345
+{
+"requestId": 1,
+"operation": "SUBMIT_ORDER",
+"orderItems" : [
+   {
+        "orderItemId": 1,
+        "itemCode": "I0002",
+        "quantity": 3,
+        "pricePerUnit": 5,
+        "price": 5,
+        "state": "FILLED" 
+   }
+]
+}
