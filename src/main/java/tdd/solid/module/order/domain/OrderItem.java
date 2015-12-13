@@ -7,6 +7,7 @@ public class OrderItem {
     private double pricePerUnit;
     private double price;
     private OrderItemState state;
+    
     public long getOrderItemId() {
         return orderItemId;
     }

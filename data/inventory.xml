@@ -1,0 +1,11 @@
+<map>
+  <entry>
+    <string>I0001</string>
+    <tdd.solid.module.order.domain.InventoryItem>
+      <itemCode>I0001</itemCode>
+      <pricingCalculation>FULLQUANTITY</pricingCalculation>
+      <pricePerUnit>5</pricePerUnit>
+      <quantity>10</quantity>
+    </tdd.solid.module.order.domain.InventoryItem>
+  </entry>
+</map>

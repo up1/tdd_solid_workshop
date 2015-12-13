@@ -8,18 +8,25 @@ import java.util.Map;
 
 import tdd.solid.RequestMessage;
 import tdd.solid.ResponseMessage;
+import tdd.solid.module.order.domain.InventoryItem;
 import tdd.solid.module.order.domain.Order;
+import tdd.solid.module.order.domain.OrderItem;
+import tdd.solid.module.order.domain.OrderItemState;
 import tdd.solid.module.order.domain.OrderState;
 
 import com.thoughtworks.xstream.XStream;
 
 public class OrderProcessor {
-    
+
     private static final String ORDER_FILE_NAME = "data/orders.xml";
-    private Map<Long, Order> orders;
-    private long lastOrderId = 0;
+    private static final String INVENTORY_FILE_NAME = "data/inventory.xml";
     
+    private Map<Long, Order> orders;
+    private Map<String, InventoryItem> inventory;
+    private long lastOrderId = 0;
+
     public OrderProcessor() {
+        readInventoryFromFile();
         readOrderFromFile();
         lastOrderId = orders.values()
                 .stream()
@@ -30,19 +37,19 @@ public class OrderProcessor {
 
     public ResponseMessage processMessage(RequestMessage requestMessage) {
         ResponseMessage responseMessage = null;
-        
-        switch( requestMessage.getOperation() ) {
-            case SUBMIT_ORDER:
-                responseMessage = createOrder(requestMessage);
-                break;
-            case CANCEL_ORDER:
-                responseMessage = cancelOrder(requestMessage);
-                break;
-            case GET_ORDER_DETAIL:
-                responseMessage = getOrder(requestMessage);
-                break;
+
+        switch (requestMessage.getOperation()) {
+        case SUBMIT_ORDER:
+            responseMessage = createOrder(requestMessage);
+            break;
+        case CANCEL_ORDER:
+            responseMessage = cancelOrder(requestMessage);
+            break;
+        case GET_ORDER_DETAIL:
+            responseMessage = getOrder(requestMessage);
+            break;
         }
-        
+
         return responseMessage;
     }
 
@@ -63,14 +70,40 @@ public class OrderProcessor {
         Order newOrder = new Order();
         newOrder.setOrderId(++lastOrderId);
         newOrder.getOrderItems().addAll(requestMessage.getOrderItems());
-        newOrder.setState(OrderState.PROCESSING);
+
+        newOrder.getOrderItems().forEach(currentItem -> {
+            
+            //Check quantity from inventory
+            InventoryItem inventoryItem = inventory.get(currentItem.getItemCode());
+            if(inventoryItem.getQuantity() >= currentItem.getQuantity()) {
+                inventoryItem.setQuantity(inventoryItem.getQuantity() - currentItem.getQuantity());
+                
+                //Calculate price
+                calculatePrice(currentItem, inventoryItem);
+                
+                currentItem.setState(OrderItemState.FILLED);
+            } else {
+                currentItem.setState(OrderItemState.NOT_ENOUGH_QUANTITY);
+            }
+        });
+
+        newOrder.setState(newOrder.getOrderItems().stream().allMatch(o -> o.getState() == OrderItemState.FILLED) 
+                ? OrderState.FILLED
+                : OrderState.PROCESSING);
         
         orders.put(newOrder.getOrderId(), newOrder);
         
-        //Save order to file
+        // Save inventory to file
+        writeInventoryToFile();
+
+        // Save order to file
         writeOrderToFile();
-        
+
         return createOrderResponseMessage(requestMessage, newOrder);
+    }
+
+    private void calculatePrice(OrderItem currentItem, InventoryItem inventoryItem) {
+        
     }
 
     private ResponseMessage createOrderResponseMessage(RequestMessage requestMessage, Order newOrder) {
@@ -78,10 +111,23 @@ public class OrderProcessor {
     }
 
     @SuppressWarnings("unchecked")
+    private void readInventoryFromFile() {
+        inventory = (Map<String, InventoryItem>) new XStream().fromXML(new File(INVENTORY_FILE_NAME));
+    }
+    
+    private void writeInventoryToFile() {
+        try (OutputStream stream = new FileOutputStream(INVENTORY_FILE_NAME)) {
+            new XStream().toXML(inventory, stream);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write inventory: " + e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private void readOrderFromFile() {
         orders = (Map<Long, Order>) new XStream().fromXML(new File(ORDER_FILE_NAME));
     }
-    
+
     private void writeOrderToFile() {
         try (OutputStream stream = new FileOutputStream(ORDER_FILE_NAME)) {
             new XStream().toXML(orders, stream);
